@@ -11,7 +11,13 @@
     "start:frontend": "cd frontend && npm run preview",
     "typecheck": "cd backend && npm run typecheck && cd ../frontend && npm run typecheck"
   },
-  "keywords": ["card-game", "typescript", "react", "websocket", "p2p"],
+  "keywords": [
+    "card-game",
+    "typescript",
+    "react",
+    "websocket",
+    "p2p"
+  ],
   "author": "",
   "license": "MIT"
 }

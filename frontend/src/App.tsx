@@ -1,40 +1,16 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useGameStore } from "./store/gameStore";
+import { useWebSocketStore } from "./store/wsStore";
 import { GameMessage } from "./types";
 import MainMenu from "./components/MainMenu";
 import GameBoard from "./components/GameBoard";
 
 function App() {
   const { gameState, connected, setConnected, gameMode } = useGameStore();
+  const connect = useWebSocketStore((state) => state.connect);
+  const disconnect = useWebSocketStore((state) => state.disconnect);
 
-  useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8080");
-
-    ws.onopen = () => {
-      setConnected(true);
-      console.log("✅ Conectado al servidor");
-    };
-
-    ws.onmessage = (event) => {
-      const message: GameMessage = JSON.parse(event.data);
-      handleMessage(message);
-    };
-
-    ws.onerror = (error) => {
-      console.error("❌ Error WebSocket:", error);
-      setConnected(false);
-    };
-
-    ws.onclose = () => {
-      setConnected(false);
-      console.log("❌ Desconectado del servidor");
-    };
-
-    return () => ws.close();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleMessage = (message: GameMessage) => {
+  const handleMessage = useCallback((message: GameMessage) => {
     const { updateGameState, setPlayerId, setRoomId } = useGameStore.getState();
 
     switch (message.type) {
@@ -54,7 +30,27 @@ function App() {
         alert(`Error: ${message.message}`);
         break;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    connect("ws://localhost:8080", {
+      onOpen: () => {
+        setConnected(true);
+        console.log("✅ Conectado al servidor");
+      },
+      onMessage: handleMessage,
+      onError: () => {
+        console.error("❌ Error WebSocket");
+        setConnected(false);
+      },
+      onClose: () => {
+        setConnected(false);
+        console.log("❌ Desconectado del servidor");
+      },
+    });
+
+    return disconnect;
+  }, [connect, disconnect, handleMessage, setConnected]);
 
   return (
     <div className="w-full h-full bg-gradient-to-br from-slate-900 to-slate-800">

@@ -1,25 +1,22 @@
 
 import { useState } from "react";
 import { useGameStore } from "../store/gameStore";
+import { useWebSocketStore } from "../store/wsStore";
 
 function MainMenu() {
   const { playerId, setGameMode } = useGameStore();
+  const send = useWebSocketStore((state) => state.send);
   const [playerName, setPlayerName] = useState("");
   const [player2Name, setPlayer2Name] = useState("");
 
   const handleJoinOnline = () => {
     setGameMode("online");
 
-    const ws = new WebSocket("ws://localhost:8080");
-    ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          type: "join",
-          playerId: playerId || undefined,
-          data: { name: playerName || "Jugador" },
-        })
-      );
-    };
+    send({
+      type: "join",
+      playerId,
+      data: { name: playerName.trim() || "Jugador" },
+    });
   };
 
   const handleLocal = () => {

@@ -4,13 +4,18 @@ import { Card, CARDS_INFO } from "./Card";
 export class Game {
   private gameState: GameState;
 
-  constructor(player1Id: string, player2Id: string) {
+  constructor(
+    player1Id: string,
+    player2Id: string,
+    player1Name = "Jugador 1",
+    player2Name = "Jugador 2"
+  ) {
     this.gameState = {
       phase: "draw_phase",
       currentPlayer: player1Id,
       players: {
-        [player1Id]: this.initializePlayer(player1Id, "Jugador 1"),
-        [player2Id]: this.initializePlayer(player2Id, "Jugador 2"),
+        [player1Id]: this.initializePlayer(player1Id, player1Name),
+        [player2Id]: this.initializePlayer(player2Id, player2Name),
       },
       battleZone: [],
       turn: 1,
@@ -85,7 +90,14 @@ export class Game {
 
   playCard(playerId: string, cardId: string): boolean {
     const player = this.gameState.players[playerId];
-    if (!player) return false;
+    if (
+      !player ||
+      this.gameState.currentPlayer !== playerId ||
+      this.gameState.phase !== "main_phase" ||
+      player.battleZone.length >= 5
+    ) {
+      return false;
+    }
 
     const cardIndex = player.hand.findIndex((c) => c.cardId === cardId);
     if (cardIndex === -1) return false;
@@ -99,7 +111,13 @@ export class Game {
 
   attack(attackerId: string, attackingCardId: string, defendingCardId: string): boolean {
     const attacker = this.gameState.players[attackerId];
-    if (!attacker) return false;
+    if (
+      !attacker ||
+      this.gameState.currentPlayer !== attackerId ||
+      this.gameState.phase !== "battle_phase"
+    ) {
+      return false;
+    }
 
     const attackingCard = attacker.battleZone.find((c) => c.cardId === attackingCardId);
     if (!attackingCard) return false;
@@ -140,6 +158,11 @@ export class Game {
 
   endTurn(playerId: string): boolean {
     if (this.gameState.currentPlayer !== playerId) return false;
+    if (this.isGameOver()) return false;
+
+    if (this.gameState.phase === "draw_phase") {
+      this.drawCard(playerId);
+    }
     this.nextPhase();
     return true;
   }
@@ -149,6 +172,7 @@ export class Game {
   }
 
   getWinner(): string | null {
+    if (!this.isGameOver()) return null;
     const alive = Object.entries(this.gameState.players).find(([_, p]) => p.lifePoints > 0);
     return alive ? alive[0] : null;
   }

@@ -1,3 +1,5 @@
+import type { Card } from "./Card";
+
 // Tipos base del juego
 export interface CardInfo {
   name: string;
